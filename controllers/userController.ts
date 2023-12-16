@@ -43,9 +43,13 @@ exports.user_sign_up_post = [
       // NOT IMPLEMENTED YET
       res.send(errors.array());
     } else {
-      await newUser.save();
-      res.send("form completed correctly");
-      
+      const userExists = await User.findOne({ email: req.body.sign_up_email }).exec();
+      if (userExists) {
+        res.send("user already exists");
+      } else {
+        await newUser.save();
+        res.send("user created");
+      }
     }
   }),
 ];

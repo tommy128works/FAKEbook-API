@@ -51,8 +51,14 @@ exports.user_sign_up_post = [
             res.send(errors.array());
         }
         else {
-            yield newUser.save();
-            res.send("form completed correctly");
+            const userExists = yield User.findOne({ email: req.body.sign_up_email }).exec();
+            if (userExists) {
+                res.send("user already exists");
+            }
+            else {
+                yield newUser.save();
+                res.send("user created");
+            }
         }
     })),
 ];
