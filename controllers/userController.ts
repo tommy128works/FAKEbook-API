@@ -36,31 +36,52 @@ exports.user_sign_up_post = [
       // NOT IMPLEMENTED YET
       res.send(errors.array());
     } else {
-      const userExists = await User.findOne({ email: req.body.sign_up_email }).exec();
+      const userExists = await User.findOne({
+        email: req.body.sign_up_email,
+      }).exec();
       if (userExists) {
         res.send("user already exists");
       } else {
+        bcrypt.hash(
+          req.body.sign_up_password,
+          10,
+          async (err: any, hashedPassword: string) => {
+            if (err) {
+              return next(err);
+            } else {
+              const newUser = new User({
+                first_name: req.body.first_name,
+                last_name: req.body.last_name,
+                date_of_birth: new Date(
+                  req.body.year,
+                  req.body.month,
+                  req.body.day,
+                ),
+                gender: req.body.gender,
+                email: req.body.sign_up_email,
+                password: hashedPassword,
+              });
 
-        bcrypt.hash(req.body.sign_up_password, 10, async (err: any, hashedPassword: string) => {
-          if (err) {
-            return next(err);
-          } else {
-            const newUser = new User({
-              first_name: req.body.first_name,
-              last_name: req.body.last_name,
-              date_of_birth: new Date(req.body.year, req.body.month, req.body.day),
-              gender: req.body.gender,
-              email: req.body.sign_up_email, 
-              password: hashedPassword,
-            });
-
-            await newUser.save();
-            res.send("user created");
-          }
-
-        });
-
+              await newUser.save();
+              res.send("user created");
+            }
+          },
+        );
       }
     }
   }),
 ];
+
+exports.user_log_in_post = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const user = await User.findOne({ email: req.body.email });
+    if (!user) {
+      return res.send("No user with this email");
+    };
+    const match = await bcrypt.compare(req.body.password, user.password);
+    if (!match) {
+      return res.send("Incorrect password");
+    }
+    res.send("end");
+  },
+);

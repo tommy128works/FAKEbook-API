@@ -44,7 +44,9 @@ exports.user_sign_up_post = [
             res.send(errors.array());
         }
         else {
-            const userExists = yield User.findOne({ email: req.body.sign_up_email }).exec();
+            const userExists = yield User.findOne({
+                email: req.body.sign_up_email,
+            }).exec();
             if (userExists) {
                 res.send("user already exists");
             }
@@ -70,3 +72,15 @@ exports.user_sign_up_post = [
         }
     })),
 ];
+exports.user_log_in_post = asyncHandler((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = yield User.findOne({ email: req.body.email });
+    if (!user) {
+        return res.send("No user with this email");
+    }
+    ;
+    const match = yield bcrypt.compare(req.body.password, user.password);
+    if (!match) {
+        return res.send("Incorrect password");
+    }
+    res.send("end");
+}));
