@@ -1,6 +1,8 @@
 const User = require("../models/user");
 const { body, validationResult } = require("express-validator");
 const asyncHandler = require("express-async-handler");
+const bcrypt = require("bcryptjs");
+
 import { Request, Response, NextFunction } from "express";
 
 exports.user_sign_up_post = [
@@ -29,15 +31,6 @@ exports.user_sign_up_post = [
   asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
 
-    const newUser = new User({
-      first_name: req.body.first_name,
-      last_name: req.body.last_name,
-      date_of_birth: new Date(req.body.year, req.body.month, req.body.day),
-      gender: req.body.gender,
-      email: req.body.sign_up_email, 
-      password: req.body.sign_up_password,
-    });
-
     if (!errors.isEmpty()) {
       // reload filled out form with error messages
       // NOT IMPLEMENTED YET
@@ -47,8 +40,26 @@ exports.user_sign_up_post = [
       if (userExists) {
         res.send("user already exists");
       } else {
-        await newUser.save();
-        res.send("user created");
+
+        bcrypt.hash(req.body.sign_up_password, 10, async (err: any, hashedPassword: string) => {
+          if (err) {
+            return next(err);
+          } else {
+            const newUser = new User({
+              first_name: req.body.first_name,
+              last_name: req.body.last_name,
+              date_of_birth: new Date(req.body.year, req.body.month, req.body.day),
+              gender: req.body.gender,
+              email: req.body.sign_up_email, 
+              password: hashedPassword,
+            });
+
+            await newUser.save();
+            res.send("user created");
+          }
+
+        });
+
       }
     }
   }),

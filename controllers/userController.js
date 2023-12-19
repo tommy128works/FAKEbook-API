@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const User = require("../models/user");
 const { body, validationResult } = require("express-validator");
 const asyncHandler = require("express-async-handler");
+const bcrypt = require("bcryptjs");
 exports.user_sign_up_post = [
     body("first_name", "First name is empty").trim().notEmpty().escape(),
     body("last_name", "Last name is empty").trim().notEmpty().escape(),
@@ -37,14 +38,6 @@ exports.user_sign_up_post = [
         .escape(),
     asyncHandler((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
         const errors = validationResult(req);
-        const newUser = new User({
-            first_name: req.body.first_name,
-            last_name: req.body.last_name,
-            date_of_birth: new Date(req.body.year, req.body.month, req.body.day),
-            gender: req.body.gender,
-            email: req.body.sign_up_email,
-            password: req.body.sign_up_password,
-        });
         if (!errors.isEmpty()) {
             // reload filled out form with error messages
             // NOT IMPLEMENTED YET
@@ -56,8 +49,23 @@ exports.user_sign_up_post = [
                 res.send("user already exists");
             }
             else {
-                yield newUser.save();
-                res.send("user created");
+                bcrypt.hash(req.body.sign_up_password, 10, (err, hashedPassword) => __awaiter(void 0, void 0, void 0, function* () {
+                    if (err) {
+                        return next(err);
+                    }
+                    else {
+                        const newUser = new User({
+                            first_name: req.body.first_name,
+                            last_name: req.body.last_name,
+                            date_of_birth: new Date(req.body.year, req.body.month, req.body.day),
+                            gender: req.body.gender,
+                            email: req.body.sign_up_email,
+                            password: hashedPassword,
+                        });
+                        yield newUser.save();
+                        res.send("user created");
+                    }
+                }));
             }
         }
     })),
