@@ -72,16 +72,38 @@ exports.user_sign_up_post = [
   }),
 ];
 
-exports.user_log_in_post = asyncHandler(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const user = await User.findOne({ email: req.body.email });
-    if (!user) {
-      return res.send("No user with this email");
-    };
-    const match = await bcrypt.compare(req.body.password, user.password);
-    if (!match) {
-      return res.send("Incorrect password");
+exports.user_log_in_post = [
+  body("log_in_email")
+    .trim()
+    .notEmpty()
+    .withMessage("Email is empty")
+    .isEmail()
+    .withMessage("Invalid email provided")
+    .escape()
+    .normalizeEmail(),
+  body("log_in_password", "Password is too short")
+    .isLength({ min: 6 })
+    .escape(),
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+      // reload filled out form with error messages
+      // NOT IMPLEMENTED YET
+      res.send(errors.array());
+    } else {
+      const user = await User.findOne({ email: req.body.log_in_email });
+      if (!user) {
+        return res.send("No user with this email");
+      }
+      const match = await bcrypt.compare(
+        req.body.log_in_password,
+        user.password,
+      );
+      if (!match) {
+        return res.send("Incorrect password");
+      }
+      res.send("login complete");
     }
-    res.send("end");
-  },
-);
+  }),
+];

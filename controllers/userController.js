@@ -72,15 +72,35 @@ exports.user_sign_up_post = [
         }
     })),
 ];
-exports.user_log_in_post = asyncHandler((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    const user = yield User.findOne({ email: req.body.email });
-    if (!user) {
-        return res.send("No user with this email");
-    }
-    ;
-    const match = yield bcrypt.compare(req.body.password, user.password);
-    if (!match) {
-        return res.send("Incorrect password");
-    }
-    res.send("end");
-}));
+exports.user_log_in_post = [
+    body("log_in_email")
+        .trim()
+        .notEmpty()
+        .withMessage("Email is empty")
+        .isEmail()
+        .withMessage("Invalid email provided")
+        .escape()
+        .normalizeEmail(),
+    body("log_in_password", "Password is too short")
+        .isLength({ min: 6 })
+        .escape(),
+    asyncHandler((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            // reload filled out form with error messages
+            // NOT IMPLEMENTED YET
+            res.send(errors.array());
+        }
+        else {
+            const user = yield User.findOne({ email: req.body.log_in_email });
+            if (!user) {
+                return res.send("No user with this email");
+            }
+            const match = yield bcrypt.compare(req.body.log_in_password, user.password);
+            if (!match) {
+                return res.send("Incorrect password");
+            }
+            res.send("login complete");
+        }
+    })),
+];
